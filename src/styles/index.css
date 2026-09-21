@@ -1,0 +1,152 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    background: var(--surface-white);
+    color: var(--ink-gray-9);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 420; /* the design's body weight (Inter is variable) */
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    letter-spacing: inherit;
+  }
+
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
+  a {
+    text-underline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--surface-blue-2);
+  }
+
+  /* Native search inputs bring their own clear button and rounding. */
+  input[type='search']::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+  }
+
+  dialog {
+    color: inherit;
+  }
+}
+
+/* Rendered advisor markdown (react-markdown output inside .efs-md). */
+.efs-md {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.efs-md > * + * {
+  margin-top: 10px;
+}
+.efs-md p {
+  margin: 0;
+}
+.efs-md ul,
+.efs-md ol {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.efs-md ul {
+  list-style: disc;
+}
+.efs-md ol {
+  list-style: decimal;
+}
+.efs-md strong {
+  font-weight: 600;
+  color: var(--ink-gray-9);
+}
+.efs-md h1,
+.efs-md h2,
+.efs-md h3,
+.efs-md h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-gray-9);
+}
+.efs-md a {
+  color: var(--ink-blue-3);
+  text-decoration: underline;
+}
+.efs-md code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--surface-gray-2);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.efs-md pre {
+  margin: 0;
+  overflow: auto;
+  background: var(--surface-gray-2);
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+.efs-md pre code {
+  background: none;
+  padding: 0;
+}
+.efs-md table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.efs-md th,
+.efs-md td {
+  border: 1px solid var(--outline-gray-1);
+  padding: 6px 10px;
+  text-align: left;
+}
+.efs-md th {
+  background: var(--surface-gray-1);
+  font-weight: 500;
+}
+.efs-md blockquote {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--outline-gray-2);
+  color: var(--ink-gray-6);
+}
+.efs-md hr {
+  border: 0;
+  border-top: 1px solid var(--outline-gray-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

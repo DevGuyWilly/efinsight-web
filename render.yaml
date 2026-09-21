@@ -1,0 +1,30 @@
+# Render Blueprint for the EFinSight web app (static site).
+#
+# The browser only ever talks to this site. In dev Vite proxies the API; on Render these rewrite rules do the same,
+# so the backend needs no CORS setup and the TrueLayer redirect lands on this origin.
+#
+# BEFORE DEPLOYING: replace API_URL below (three places) with your backend's URL, e.g. https://efinsight-api.onrender.com
+services:
+  - type: web
+    name: efinsight-web
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    routes:
+      # Order matters: specific proxy rules first, single-page-app fallback last.
+      - type: rewrite
+        source: /api/*
+        destination: API_URL/api/*
+      - type: rewrite
+        source: /callback
+        destination: API_URL/callback
+      - type: rewrite
+        source: /auth/connect-bank
+        destination: API_URL/auth/connect-bank
+      # /auth/success and /auth/error are React routes, so they fall through to the app.
+      - type: rewrite
+        source: /*
+        destination: /index.html
