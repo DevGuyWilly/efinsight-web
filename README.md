@@ -34,12 +34,6 @@ With no `/api/me` endpoint, the callback page calls `/api/transactions/count` on
 
 "Do this later" lets a user into the app early; data pages then show a prompt to finish setup. Settings is always reachable.
 
-## Auth
-
-- JWT in `localStorage`, sent as `Authorization: Bearer` from one place (`src/api/client.ts`).
-- No refresh. A 401 clears the session and redirects to `/login` with a notice; you return to the page you were on. A 403 from a protected endpoint is treated the same (Spring answers unauthenticated requests with 403).
-- Login and signup accept both the flat response the backend returns (`{ token, userId, email, ... }`) and `{ token, user: {...} }`.
-
 ## Pages
 
 | Route | |
@@ -73,10 +67,6 @@ With no `/api/me` endpoint, the callback page calls `/api/transactions/count` on
 
 Render's docs don't say whether rewrites keep query strings or how rules are ordered; connecting a bank tests both. If long imports or the callback fail through the proxy, set `VITE_API_BASE_URL` to the API's URL instead and add CORS plus a redirect to this site on the backend.
 
-## Display scale
-
-On desktop-size, mouse-driven screens (768px and wider with a fine pointer) the whole UI renders at 80%, like a browser zoomed out. Phones and tablets stay at 100%. It is one CSS variable in `src/styles/index.css`: change `--ui-zoom` to tune it, or set it to `1` to switch it off. Full-height layouts use `h-app` / `min-h-app` (not `h-dvh`) so they still fill the window when zoomed.
-
 ## Layout
 
 ```
@@ -90,7 +80,3 @@ src/stores/      auth, theme, advice history
 scripts/mock-backend.mjs   dependency-free stand-in for the API
 tests/                     Vitest
 ```
-
-## Known gaps
-
-Terms and Privacy links are placeholders. Backend wishlist: one-time connect URL instead of the JWT in the query string, `GET /api/me`, 401 instead of 403, and endpoints for disconnect, profile update and advice history.
