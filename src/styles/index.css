@@ -4,13 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Interface scale. On desktop-size, mouse-driven screens the whole UI renders at 80%, as if the browser were zoomed
-   out. Touch devices (phones, tablets) stay at 100%: text is already small there, taps need room, and it keeps the
-   16px-input rule above honest. Change --ui-zoom to tune it; set it to 1 to turn the effect off. */
+/* Interface scale. On phones and tablets (up to 1023px) the whole UI renders at 80%, as if the browser were zoomed
+   out. Laptops and bigger screens render at 100%. Change --ui-zoom to tune it; set it to 1 to turn the effect off.
+   The forced input font-size below is divided by this same variable, so fields still read as 16px after the zoom
+   and don't retrigger iOS's zoom-on-focus. */
 :root {
   --ui-zoom: 1;
 }
-@media (min-width: 768px) and (pointer: fine) {
+@media (max-width: 1023px) {
   :root {
     --ui-zoom: 0.8;
   }
@@ -77,13 +78,15 @@
   }
 }
 
-/* iOS Safari zooms the page when a focused field has text under 16px. Keep fields at 16px on touch devices
-   instead of disabling pinch-zoom (which would hurt accessibility). Unlayered so it beats the Tailwind text-* utilities. */
-@media (max-width: 767px), (pointer: coarse) {
+/* iOS Safari zooms the page when a focused field reads smaller than 16px. Keep fields at an effective 16px on
+   touch devices instead of disabling pinch-zoom (which would hurt accessibility). The value is divided by
+   --ui-zoom so it still comes out to 16px once the interface scale above shrinks it. Unlayered so it beats the
+   Tailwind text-* utilities. */
+@media (max-width: 1023px), (pointer: coarse) {
   input:not([type='checkbox']):not([type='radio']),
   select,
   textarea {
-    font-size: 16px !important;
+    font-size: calc(16px / var(--ui-zoom)) !important;
   }
 }
 
