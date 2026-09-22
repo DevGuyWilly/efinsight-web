@@ -18,7 +18,7 @@ export function SelectControl<T extends string>({ label, value, onChange, option
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
         className={cn(
-          'h-7 w-full cursor-pointer appearance-none rounded-md border border-transparent bg-surface-gray-2 pl-2 pr-7',
+          'h-10 w-full cursor-pointer appearance-none rounded-md border border-transparent bg-surface-gray-2 pl-3 pr-8 md:h-7 md:pl-2 md:pr-7',
           'text-base tracking-body text-ink-gray-8 hover:bg-surface-gray-3',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4',
         )}
@@ -33,7 +33,7 @@ export function SelectControl<T extends string>({ label, value, onChange, option
         size={16}
         strokeWidth={1.5}
         aria-hidden="true"
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ink-gray-6"
+        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-gray-6 md:right-2"
       />
     </div>
   );
@@ -59,7 +59,7 @@ export function Segmented<T extends string>({ label, value, onChange, options }:
             aria-pressed={active}
             onClick={() => onChange(o.value)}
             className={cn(
-              'h-[22px] rounded-sm px-2.5 text-sm tracking-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4',
+              'h-9 rounded-sm px-3.5 text-sm tracking-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4 md:h-[22px] md:px-2.5',
               active ? 'bg-surface-selected font-medium text-ink-gray-9 shadow-sm' : 'text-ink-gray-6 hover:text-ink-gray-8',
             )}
           >

@@ -25,7 +25,7 @@ export function Page({ title, actions, children, padded = true, scroll = true, c
             type="button"
             onClick={openNav}
             aria-label="Open navigation"
-            className="-ml-1 flex size-8 items-center justify-center rounded-md text-ink-gray-8 hover:bg-surface-gray-2 md:hidden"
+            className="-ml-2 flex size-10 items-center justify-center rounded-md text-ink-gray-8 hover:bg-surface-gray-2 md:hidden"
           >
             <Menu size={18} strokeWidth={1.5} aria-hidden="true" />
           </button>

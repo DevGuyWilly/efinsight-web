@@ -73,7 +73,7 @@ function Accordion({ title, agent, icon: Icon, defaultOpen, children }: { title:
           className={cn('ml-auto text-ink-gray-6 transition-transform', open && 'rotate-180')}
         />
       </button>
-      <div id={panelId} hidden={!open} className="px-4 pb-4 pl-10">
+      <div id={panelId} hidden={!open} className="px-4 pb-4 md:pl-10">
         {children}
       </div>
     </div>

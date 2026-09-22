@@ -14,6 +14,8 @@ export default {
     colors: {
       transparent: 'transparent',
       current: 'currentColor',
+      // Dimming layer behind the mobile drawer and dialogs (the token colours are CSS variables, so `black/40` isn't available).
+      scrim: 'rgb(0 0 0 / 0.4)',
       ...colors,
     },
     fontFamily: {

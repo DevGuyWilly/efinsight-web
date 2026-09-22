@@ -6,13 +6,16 @@ import { formatMoney } from '@/lib/money';
 import { initialOf, type Direction, type Txn } from '@/lib/transactions';
 
 /** Initial avatar + merchant (or description) + secondary line. */
-export function MerchantCell({ txn }: { txn: Pick<Txn, 'title' | 'subtitle'> }) {
+export function MerchantCell({ txn, meta }: { txn: Pick<Txn, 'title' | 'subtitle'>; meta?: string }) {
   return (
     <span className="flex min-w-0 flex-1 items-center gap-2.5">
       <Avatar text={initialOf(txn.title)} />
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="truncate font-medium text-ink-gray-9">{txn.title}</span>
-        <span className="truncate text-xs text-ink-gray-5">{txn.subtitle}</span>
+        <span className="truncate text-xs text-ink-gray-5">
+          {meta ? <span className="sm:hidden">{meta} · </span> : null}
+          {txn.subtitle}
+        </span>
       </span>
     </span>
   );
@@ -43,9 +46,9 @@ export function CompactRow({ txn, height = 48 }: CompactRowProps) {
       style={{ height }}
       className="flex items-center gap-3 border-b border-outline-gray-1 px-3 last:border-b-0"
     >
-      <span className="w-14 shrink-0 text-sm text-ink-gray-6 sm:w-[76px]">{formatDay(txn.date)}</span>
-      <MerchantCell txn={txn} />
-      <Amount txn={txn} className="w-24 shrink-0 sm:w-[110px]" />
+      <span className="hidden w-[76px] shrink-0 text-sm text-ink-gray-6 sm:block">{formatDay(txn.date)}</span>
+      <MerchantCell txn={txn} meta={formatDay(txn.date)} />
+      <Amount txn={txn} className="shrink-0 sm:w-[110px]" />
     </div>
   );
 }

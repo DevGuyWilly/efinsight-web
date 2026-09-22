@@ -43,11 +43,12 @@ const RANGES: { value: RangeFilter; label: string }[] = [
 /** Row grid shared by header and rows so the columns line up. Category and type hide below `md`. */
 const ROW = 'flex items-center gap-3 px-3';
 const COL = {
-  date: 'w-14 shrink-0 sm:w-[76px]',
+  date: 'hidden shrink-0 sm:block sm:w-[76px]',
+  dateHead: 'flex-1 sm:w-[76px] sm:flex-none sm:shrink-0',
   category: 'hidden w-[140px] shrink-0 md:block',
   type: 'hidden w-[84px] shrink-0 md:block',
-  amount: 'w-24 shrink-0 sm:w-[110px]',
-  chevron: 'w-5 shrink-0',
+  amount: 'shrink-0 sm:w-[110px]',
+  chevron: 'hidden w-5 shrink-0 sm:block',
 };
 
 function SortHeader({ label, sortKey, filters, onSort, className }: { label: string; sortKey: SortKey; filters: TxnFilters; onSort: (k: SortKey) => void; className?: string }) {
@@ -59,7 +60,7 @@ function SortHeader({ label, sortKey, filters, onSort, className }: { label: str
       onClick={() => onSort(sortKey)}
       aria-label={`Sort by ${label.toLowerCase()}${active ? `, currently ${filters.sortDir === 'asc' ? 'ascending' : 'descending'}` : ''}`}
       className={cn(
-        'inline-flex items-center gap-1 rounded-sm text-xs font-medium hover:text-ink-gray-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4',
+        'inline-flex h-9 items-center gap-1 rounded-sm px-1 text-xs font-medium hover:text-ink-gray-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4 md:h-auto md:px-0',
         active ? 'text-ink-gray-9' : 'text-ink-gray-6',
         className,
       )}
@@ -181,7 +182,7 @@ export default function TransactionsPage() {
 
       <div className="flex flex-wrap items-center gap-2 border-b border-outline-gray-1 px-4 py-3 md:px-6">
         <div className="relative w-full sm:w-60">
-          <Search size={16} strokeWidth={1.5} aria-hidden="true" className="pointer-events-none absolute left-2 top-1.5 text-ink-gray-5" />
+          <Search size={16} strokeWidth={1.5} aria-hidden="true" className="pointer-events-none absolute left-2.5 top-3 text-ink-gray-5 md:left-2 md:top-1.5" />
           <label htmlFor="txn-search" className="sr-only">
             Search transactions
           </label>
@@ -191,7 +192,7 @@ export default function TransactionsPage() {
             value={filters.query}
             onChange={(e) => update({ query: e.target.value })}
             placeholder="Search merchant or description"
-            className="h-7 w-full rounded-md border border-transparent bg-surface-gray-2 pl-[30px] pr-2 text-base tracking-body text-ink-gray-8 placeholder:text-ink-gray-4 focus:border-outline-gray-4 focus:bg-surface-white focus:outline-none focus:ring-2 focus:ring-outline-gray-2"
+            className="h-10 w-full rounded-md border border-transparent bg-surface-gray-2 pl-[34px] pr-2 text-base md:h-7 md:pl-[30px] tracking-body text-ink-gray-8 placeholder:text-ink-gray-4 focus:border-outline-gray-4 focus:bg-surface-white focus:outline-none focus:ring-2 focus:ring-outline-gray-2"
           />
         </div>
         <SelectControl
@@ -215,10 +216,10 @@ export default function TransactionsPage() {
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pt-3 md:px-3">
         <div className={cn(ROW, 'h-9 border-b border-outline-gray-1 bg-surface-gray-1')}>
-          <span className={COL.date}>
+          <span className={COL.dateHead}>
             <SortHeader label="Date" sortKey="date" filters={filters} onSort={onSort} />
           </span>
-          <span className="flex-1 text-xs font-medium text-ink-gray-6">Merchant</span>
+          <span className="hidden flex-1 text-xs font-medium text-ink-gray-6 sm:block">Merchant</span>
           <span className={cn(COL.category, 'text-xs font-medium text-ink-gray-6')}>Category</span>
           <span className={cn(COL.type, 'text-xs font-medium text-ink-gray-6')}>Type</span>
           <span className={cn(COL.amount, 'flex justify-end')}>
@@ -250,12 +251,12 @@ export default function TransactionsPage() {
                   aria-label={`${t.title}, ${formatMoney(t.pence, t.currency, { signed: true })}, ${formatDay(t.date)}. View details`}
                   className={cn(
                     ROW,
-                    'h-12 w-full border-b border-outline-gray-1 text-left text-base hover:bg-surface-gray-1',
+                    'h-14 w-full border-b border-outline-gray-1 text-left text-base hover:bg-surface-gray-1 sm:h-12',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-outline-gray-4',
                   )}
                 >
                   <span className={cn(COL.date, 'text-sm text-ink-gray-6')}>{formatDay(t.date)}</span>
-                  <MerchantCell txn={t} />
+                  <MerchantCell txn={t} meta={formatDay(t.date)} />
                   <span className={cn(COL.category, 'truncate text-sm text-ink-gray-6')}>{t.categoryLabel}</span>
                   <span className={COL.type}>
                     <DirectionBadge direction={t.direction} />

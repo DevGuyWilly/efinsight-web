@@ -32,13 +32,13 @@ export function AppShell() {
 
   return (
     <MobileNavContext.Provider value={ctx}>
-      <div className="flex h-dvh overflow-hidden bg-surface-white text-ink-gray-9">
+      <div className="flex h-app overflow-hidden bg-surface-white text-ink-gray-9">
         <div className="hidden w-60 shrink-0 md:flex">
           <SidebarNav />
         </div>
         {open ? (
           <div className="fixed inset-0 z-40 md:hidden">
-            <button type="button" aria-label="Close navigation" className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+            <button type="button" aria-label="Close navigation" className="absolute inset-0 bg-scrim" onClick={() => setOpen(false)} />
             <div className="absolute inset-y-0 left-0 flex w-60 shadow-sm">
               <SidebarNav />
             </div>

@@ -11,7 +11,7 @@ const points = [
 /** Split layout for log in / sign up: 560px brand panel (hidden on small screens) and a 400px form. */
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh bg-surface-white text-ink-gray-9">
+    <div className="flex min-h-app bg-surface-white text-ink-gray-9">
       <aside className="hidden w-[560px] shrink-0 flex-col border-r border-outline-gray-1 bg-surface-gray-1 px-14 py-10 lg:flex">
         <Logo to="/" />
         <div className="my-auto flex flex-col gap-6">

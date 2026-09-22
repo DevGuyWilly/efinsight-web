@@ -69,7 +69,7 @@ export default function LandingPage() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-dvh bg-surface-white text-ink-gray-9">
+    <div className="min-h-app bg-surface-white text-ink-gray-9">
       <header className={cn('sticky top-0 z-10 flex h-16 items-center justify-between border-b border-outline-gray-1 bg-surface-white', gutter)}>
         <Link to="/" className="inline-flex items-center gap-2 text-lg font-semibold tracking-body text-ink-gray-9 no-underline">
           <LogoMark />

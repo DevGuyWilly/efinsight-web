@@ -21,15 +21,15 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
 ) {
   const canSubmit = value.trim().length > 0 && !loading;
   return (
-    <div className="flex flex-col gap-2.5 border-t border-outline-gray-1 bg-surface-white px-4 pb-5 pt-3 md:px-6">
+    <div className="flex flex-col gap-2.5 border-t border-outline-gray-1 bg-surface-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 md:px-6 md:pb-5">
       {showSuggestions ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden">
           {SUGGESTED_PROMPTS.map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => onPick(p)}
-              className="h-7 rounded-full border border-outline-gray-2 bg-surface-white px-2.5 text-sm text-ink-gray-8 hover:bg-surface-gray-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4"
+              className="h-9 shrink-0 whitespace-nowrap rounded-full border border-outline-gray-2 bg-surface-white px-3 text-sm text-ink-gray-8 hover:bg-surface-gray-1 md:h-7 md:px-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4"
             >
               {p}
             </button>
@@ -62,7 +62,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
             }
           }}
           placeholder="Ask about your spending, budget or investments"
-          className="min-h-[44px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1 text-base leading-normal text-ink-gray-8 outline-none placeholder:text-ink-gray-4 disabled:opacity-70"
+          className="max-h-32 min-h-[44px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1 text-base leading-normal text-ink-gray-8 outline-none placeholder:text-ink-gray-4 disabled:opacity-70"
         />
         {loading ? (
           <Button variant="outline" size="md" onClick={onStop} iconLeft={<Square size={14} strokeWidth={1.5} aria-hidden="true" />}>
@@ -75,7 +75,10 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
         )}
       </form>
       <span className="text-xs text-ink-gray-5">
-        Each question is answered on its own — earlier questions are not used as context. Answers usually take 5–15 seconds.
+        <span className="md:hidden">Each question is answered on its own. Answers take 5–15 seconds.</span>
+        <span className="hidden md:inline">
+          Each question is answered on its own — earlier questions are not used as context. Answers usually take 5–15 seconds.
+        </span>
       </span>
     </div>
   );

@@ -4,6 +4,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Interface scale. On desktop-size, mouse-driven screens the whole UI renders at 80%, as if the browser were zoomed
+   out. Touch devices (phones, tablets) stay at 100%: text is already small there, taps need room, and it keeps the
+   16px-input rule above honest. Change --ui-zoom to tune it; set it to 1 to turn the effect off. */
+:root {
+  --ui-zoom: 1;
+}
+@media (min-width: 768px) and (pointer: fine) {
+  :root {
+    --ui-zoom: 0.8;
+  }
+  html {
+    zoom: var(--ui-zoom);
+  }
+}
+
+/* Full-viewport heights must be divided by the zoom, or a zoomed page ends short of the bottom of the window. */
+.h-app {
+  height: calc(100dvh / var(--ui-zoom));
+}
+.min-h-app {
+  min-height: calc(100dvh / var(--ui-zoom));
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
@@ -20,6 +43,7 @@
     letter-spacing: 0.02em;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
 
   button,
@@ -51,6 +75,27 @@
   dialog {
     color: inherit;
   }
+}
+
+/* iOS Safari zooms the page when a focused field has text under 16px. Keep fields at 16px on touch devices
+   instead of disabling pinch-zoom (which would hurt accessibility). Unlayered so it beats the Tailwind text-* utilities. */
+@media (max-width: 767px), (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Removes the 300ms double-tap-to-zoom delay on controls. */
+a,
+button,
+input,
+select,
+textarea,
+summary,
+[role='button'] {
+  touch-action: manipulation;
 }
 
 /* Rendered advisor markdown (react-markdown output inside .efs-md). */

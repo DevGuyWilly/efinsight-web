@@ -5,7 +5,7 @@ import { Logo } from '@/components/layout/Logo';
 
 export default function NotFoundPage() {
   return (
-    <div className="flex min-h-dvh flex-col bg-surface-white text-ink-gray-9">
+    <div className="flex min-h-app flex-col bg-surface-white text-ink-gray-9">
       <header className="flex h-16 items-center border-b border-outline-gray-1 px-4 md:px-10">
         <Logo to="/" />
       </header>

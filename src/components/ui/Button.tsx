@@ -18,12 +18,12 @@ const variants: Record<ButtonVariant, string> = {
   ghost: 'border-transparent bg-transparent text-ink-gray-8 hover:bg-surface-gray-2 active:bg-surface-gray-3',
 };
 
-// 28px controls in the product, 32/36/40px on auth and marketing screens.
+// 28px controls in the product, 32/36/40px on auth and marketing screens. Below md they grow to 36-44px for touch.
 const sizes: Record<ButtonSize, string> = {
-  sm: 'h-7 px-2',
-  md: 'h-8 px-3.5',
-  lg: 'h-9 px-3.5',
-  xl: 'h-10 px-3.5',
+  sm: 'h-9 px-3 md:h-7 md:px-2',
+  md: 'h-10 px-3.5 md:h-8',
+  lg: 'h-11 px-3.5 md:h-9',
+  xl: 'h-11 px-3.5 md:h-10',
 };
 
 interface StyleOptions {

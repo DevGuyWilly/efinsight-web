@@ -31,12 +31,12 @@ function Section({ title, note, children }: { title: string; note?: string; chil
 function Row({ title, description, action, children }: { title: string; description?: ReactNode; action?: ReactNode; children?: ReactNode }) {
   return (
     <div className="flex flex-col gap-3 px-4 py-3.5">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="flex min-w-0 flex-col gap-1">
           <span className="font-medium">{title}</span>
           {description ? <span className="text-sm leading-normal text-ink-gray-6">{description}</span> : null}
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {action ? <div className="shrink-0 self-start sm:self-auto">{action}</div> : null}
       </div>
       {children}
     </div>

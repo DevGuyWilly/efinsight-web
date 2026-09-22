@@ -42,7 +42,7 @@ export function SidebarNav() {
             to={to}
             className={({ isActive }) =>
               cn(
-                'flex h-9 items-center gap-2 rounded-md px-2.5 text-base no-underline',
+                'flex h-11 items-center gap-2 rounded-md px-2.5 text-base no-underline md:h-9',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4',
                 isActive
                   ? 'bg-surface-selected font-medium text-ink-gray-9 shadow-sm'
@@ -88,7 +88,7 @@ export function SidebarNav() {
               signOut();
               navigate('/login', { replace: true });
             }}
-            className="flex size-7 shrink-0 items-center justify-center rounded-md text-ink-gray-8 hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4"
+            className="flex size-10 shrink-0 items-center justify-center rounded-md text-ink-gray-8 hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4 md:size-7"
           >
             <LogOut size={16} strokeWidth={1.5} aria-hidden="true" />
           </button>

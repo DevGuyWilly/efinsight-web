@@ -35,7 +35,7 @@ export function TransactionDialog({ txn, onClose }: { txn: Txn | null; onClose: 
       onClick={(e) => {
         if (e.target === ref.current) onClose(); // click on the backdrop
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-outline-gray-1 bg-surface-modal p-0 text-ink-gray-9 backdrop:bg-black/40"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-outline-gray-1 bg-surface-modal p-0 text-ink-gray-9 backdrop:bg-scrim"
     >
       {txn ? (
         <div className="flex flex-col gap-4 p-5">
@@ -55,7 +55,7 @@ export function TransactionDialog({ txn, onClose }: { txn: Txn | null; onClose: 
               type="button"
               aria-label="Close"
               onClick={onClose}
-              className="flex size-7 shrink-0 items-center justify-center rounded-md text-ink-gray-6 hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4"
+              className="-mr-1.5 -mt-1.5 flex size-10 shrink-0 items-center justify-center rounded-md text-ink-gray-6 hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4 md:mr-0 md:mt-0 md:size-7"
             >
               <X size={16} strokeWidth={1.5} aria-hidden="true" />
             </button>

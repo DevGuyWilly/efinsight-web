@@ -67,11 +67,15 @@ With no `/api/me` endpoint, the callback page calls `/api/transactions/count` on
 `render.yaml` defines a static site that proxies `/api/*`, `/callback` and `/auth/connect-bank` to the API and serves the app for everything else, so the API needs no CORS config.
 
 1. Deploy the API first (its repo has a Dockerfile and `render.yaml`).
-2. Replace `API_URL` in `render.yaml` with the API's URL, commit, push.
+2. `render.yaml` already points at `https://efinsight-api.onrender.com`; change the three destinations if the API's URL differs.
 3. In Render, New > Blueprint, select this repo.
 4. Set the API's `TRUELAYER_REDIRECT_URI` to `https://<this-site>/callback` and add it to the TrueLayer console.
 
 Render's docs don't say whether rewrites keep query strings or how rules are ordered; connecting a bank tests both. If long imports or the callback fail through the proxy, set `VITE_API_BASE_URL` to the API's URL instead and add CORS plus a redirect to this site on the backend.
+
+## Display scale
+
+On desktop-size, mouse-driven screens (768px and wider with a fine pointer) the whole UI renders at 80%, like a browser zoomed out. Phones and tablets stay at 100%. It is one CSS variable in `src/styles/index.css`: change `--ui-zoom` to tune it, or set it to `1` to switch it off. Full-height layouts use `h-app` / `min-h-app` (not `h-dvh`) so they still fill the window when zoomed.
 
 ## Layout
 
