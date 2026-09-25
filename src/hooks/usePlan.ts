@@ -15,8 +15,9 @@ interface PlanState {
 const IDLE: PlanState = { status: 'idle', question: '', response: null, error: null };
 
 /**
- * Advisor request state. `cancel` aborts the in-flight request (Stop button); asking again while one is in
- * flight aborts the earlier one. The 60 s timeout lives in the API client.
+ * Advisor request state for the question currently being asked. `cancel` aborts the in-flight request (Stop
+ * button); asking again while one is in flight aborts the earlier one. Pass the conversation to continue, or
+ * null to start a new one. The 60 s timeout lives in the API client.
  * Swap the body of `ask` for a streaming version later without touching the page.
  */
 export function usePlan() {
@@ -25,13 +26,13 @@ export function usePlan() {
 
   useEffect(() => () => controller.current?.abort(), []);
 
-  const ask = useCallback(async (question: string): Promise<PlanResponse | null> => {
+  const ask = useCallback(async (question: string, conversationId: number | null = null): Promise<PlanResponse | null> => {
     controller.current?.abort();
     const ac = new AbortController();
     controller.current = ac;
     setState({ status: 'loading', question, response: null, error: null });
     try {
-      const response = await askPlan(question, ac.signal);
+      const response = await askPlan(question, conversationId, ac.signal);
       if (ac.signal.aborted) return null;
       setState({ status: 'success', question, response, error: null });
       return response;

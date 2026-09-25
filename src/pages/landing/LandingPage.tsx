@@ -175,7 +175,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="w-full flex-1 overflow-hidden rounded-lg border border-outline-gray-1 bg-surface-cards">
-            <CitationList citations={SAMPLE_RESPONSE.citations ?? []} />
+            <CitationList citations={SAMPLE_RESPONSE.citations ?? []} defaultOpen />
           </div>
         </div>
       </Section>

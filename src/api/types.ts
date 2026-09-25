@@ -101,12 +101,39 @@ export interface PlanResponse {
   citations?: Citation[] | null;
   agentResponses?: Record<string, string> | null;
   error?: string | null;
+  /** The conversation the answer was saved to: a new one when the request didn't name one. */
+  conversationId?: number | null;
+  conversationTitle?: string | null;
 }
 
-/** Saved to localStorage; device-local advisor history. */
-export interface AdviceEntry {
-  id: string;
-  question: string;
-  askedAt: string;
-  response: PlanResponse;
+/** GET /api/conversations item. Instants are ISO strings. */
+export interface ConversationSummary {
+  id: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+}
+
+export interface ConversationListResponse {
+  conversations: ConversationSummary[];
+}
+
+export interface ConversationMessage {
+  id: number;
+  role: 'user' | 'assistant';
+  /** The question, or the answer's summary. */
+  content: string;
+  createdAt: string;
+  /** Assistant messages only: the full answer as POST /api/plan returned it. */
+  response?: PlanResponse | null;
+}
+
+/** GET /api/conversations/{id}: messages oldest first, alternating user / assistant. */
+export interface ConversationDetail {
+  id: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ConversationMessage[];
 }

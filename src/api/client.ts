@@ -23,7 +23,7 @@ export function isApiError(e: unknown): e is ApiError {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'DELETE';
   body?: unknown;
   /** Send the Bearer token and treat 401/403 as an expired session. Default true. */
   auth?: boolean;

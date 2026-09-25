@@ -14,6 +14,7 @@ vi.stubGlobal('window', {
 const { request, ApiError } = await import('@/api/client');
 const { normaliseAuth } = await import('@/api/auth');
 const { askPlan } = await import('@/api/plan');
+const { deleteAllConversations, deleteConversation, getConversation, listConversations } = await import('@/api/conversations');
 const { setUnauthorizedHandler, tokenStore } = await import('@/lib/session');
 
 function respond(status: number, body?: unknown) {
@@ -111,6 +112,58 @@ describe('askPlan', () => {
   it('returns a successful plan', async () => {
     vi.stubGlobal('fetch', respond(200, { success: true, summary: '**ok**', sections: { spendingAnalysis: 'x' } }));
     await expect(askPlan('hi')).resolves.toMatchObject({ success: true, summary: '**ok**' });
+  });
+
+  it('starts a new conversation when no conversationId is given', async () => {
+    const fetchMock = respond(200, { success: true, summary: 'ok', conversationId: 7, conversationTitle: 'hi' });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(askPlan('hi')).resolves.toMatchObject({ conversationId: 7 });
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({ question: 'hi' });
+  });
+
+  it('continues a conversation when given its id', async () => {
+    const fetchMock = respond(200, { success: true, summary: 'ok', conversationId: 7 });
+    vi.stubGlobal('fetch', fetchMock);
+    await askPlan('What about August?', 7);
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
+      question: 'What about August?',
+      conversationId: 7,
+    });
+  });
+});
+
+describe('conversations api', () => {
+  beforeEach(() => {
+    store.clear();
+    tokenStore.set('jwt-123');
+  });
+
+  it('lists conversations', async () => {
+    const fetchMock = respond(200, { conversations: [{ id: 7, title: 'hi', createdAt: 'a', updatedAt: 'b', messageCount: 2 }] });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(listConversations()).resolves.toMatchObject({ conversations: [{ id: 7 }] });
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/conversations');
+  });
+
+  it('reports a missing or foreign conversation as an http 404, not an expired session', async () => {
+    vi.stubGlobal('fetch', respond(404, { message: 'Conversation not found' }));
+    await expect(getConversation(99)).rejects.toMatchObject({ kind: 'http', status: 404, message: 'Conversation not found' });
+  });
+
+  it('deletes one conversation with DELETE and accepts an empty 204', async () => {
+    const fetchMock = respond(204);
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(deleteConversation(7)).resolves.toBeUndefined();
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/conversations/7');
+    expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe('DELETE');
+  });
+
+  it('clears all conversations', async () => {
+    const fetchMock = respond(204);
+    vi.stubGlobal('fetch', fetchMock);
+    await deleteAllConversations();
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/conversations');
+    expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe('DELETE');
   });
 });
 

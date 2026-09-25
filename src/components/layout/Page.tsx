@@ -20,7 +20,8 @@ export function Page({ title, actions, children, padded = true, scroll = true, c
   return (
     <>
       <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-outline-gray-1 px-4 py-2 md:px-6">
-        <div className="flex items-center gap-2">
+        {/* Grows from zero width so a long title truncates instead of pushing the actions onto another row */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <button
             type="button"
             onClick={openNav}
@@ -29,9 +30,11 @@ export function Page({ title, actions, children, padded = true, scroll = true, c
           >
             <Menu size={18} strokeWidth={1.5} aria-hidden="true" />
           </button>
-          <h1 className="text-lg font-semibold leading-tight text-ink-gray-9">{title}</h1>
+          <h1 title={title} className="truncate text-lg font-semibold leading-tight text-ink-gray-9">
+            {title}
+          </h1>
         </div>
-        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
       </header>
       <main
         className={cn(

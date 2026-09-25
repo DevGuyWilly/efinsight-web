@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Dependency-free stand-in for the EFinSight Spring backend, for developing the UI without Vertex AI / TrueLayer.
- * Mirrors the real response shapes (flat AuthResponse, Transaction entity, PlanResponseDto) and quirks:
- * unauthenticated requests get 403, /api/plan is slow, connect-bank redirects to /auth/success.
+ * Mirrors the real response shapes (flat AuthResponse, Transaction entity, PlanResponseDto, conversations) and
+ * quirks: unauthenticated requests get 403, /api/plan is slow, connect-bank redirects to /auth/success, another
+ * user's conversation is a 404. Conversations live in memory and reset on restart.
  *
  *   npm run mock            # listens on :8080
  *   PORT=8081 npm run mock
@@ -19,8 +20,25 @@ const INGEST_DELAY_MS = Number(process.env.INGEST_DELAY_MS ?? 2500);
 
 const users = new Map(); // email -> { id, email, password, firstName, lastName, bankConnected }
 const txnsByUser = new Map(); // userId -> Transaction[]
+const conversations = new Map(); // id -> { id, userId, title, createdAt, updatedAt, messages: [] }
 let nextUserId = 1;
 let nextTxnId = 1000;
+let nextConversationId = 1;
+let nextMessageId = 1;
+
+// Same rule as the backend: first line of the question, cut at a word boundary to 80 characters
+function titleFrom(question) {
+  const t = question.trim().split('\n')[0].replace(/\s+/g, ' ');
+  if (!t) return 'New conversation';
+  if (t.length <= 80) return t;
+  const cut = t.lastIndexOf(' ', 79);
+  return `${t.slice(0, cut > 40 ? cut : 79).trimEnd()}…`;
+}
+const ownConversation = (user, id) => {
+  const c = conversations.get(id);
+  return c && c.userId === user.id ? c : null;
+};
+const conversationDetail = (c) => ({ id: c.id, title: c.title, createdAt: c.createdAt, updatedAt: c.updatedAt, messages: c.messages });
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const sign = (u) => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: u.email, userId: u.id, exp: Math.floor(Date.now() / 1000) + 3600 })}.mock`;
@@ -169,9 +187,35 @@ const server = http.createServer(async (req, res) => {
     await sleep(INGEST_DELAY_MS);
     return send(res, 200, { message: 'Transactions reprocessed successfully', count: (txnsByUser.get(user.id) ?? []).length, userId: user.id });
   }
+  if (req.method === 'GET' && path === '/api/conversations') {
+    const mine = [...conversations.values()]
+      .filter((c) => c.userId === user.id)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || b.id - a.id)
+      .map((c) => ({ id: c.id, title: c.title, createdAt: c.createdAt, updatedAt: c.updatedAt, messageCount: c.messages.length }));
+    return send(res, 200, { conversations: mine });
+  }
+  if (req.method === 'DELETE' && path === '/api/conversations') {
+    for (const c of [...conversations.values()]) if (c.userId === user.id) conversations.delete(c.id);
+    return send(res, 204, undefined);
+  }
+  const conversationMatch = path.match(/^\/api\/conversations\/(\d+)$/);
+  if (conversationMatch) {
+    const c = ownConversation(user, Number(conversationMatch[1]));
+    if (!c) return send(res, 404, { message: 'Conversation not found', timestamp: new Date().toISOString() });
+    if (req.method === 'GET') return send(res, 200, conversationDetail(c));
+    if (req.method === 'DELETE') {
+      conversations.delete(c.id);
+      return send(res, 204, undefined);
+    }
+  }
   if (req.method === 'POST' && path === '/api/plan') {
-    const { question } = await readBody(req);
+    const { question, conversationId } = await readBody(req);
     if (!question || !String(question).trim()) return send(res, 400, { success: false, error: 'Question is required' });
+    let conversation = null;
+    if (conversationId != null) {
+      conversation = ownConversation(user, Number(conversationId));
+      if (!conversation) return send(res, 404, { success: false, error: 'Conversation not found' });
+    }
     await sleep(PLAN_DELAY_MS);
     if (/fail/i.test(question)) return send(res, 200, { success: false, question, error: 'The advisor could not analyse this question.' });
     const mine = (txnsByUser.get(user.id) ?? []).filter((t) => t.amount < 0).slice(0, 5);
@@ -179,16 +223,31 @@ const server = http.createServer(async (req, res) => {
       transactionId: t.id, merchant: t.merchantName ?? undefined, amount: t.amount.toFixed(2), currency: t.currency,
       category: t.transactionCategory, date: t.timestamp, description: t.description,
     }));
-    return send(res, 200, {
+    const earlier = conversation ? conversation.messages.filter((m) => m.role === 'user').length : 0;
+    const response = {
       success: true, question,
-      summary: `Here is a short answer to “${question}”. **Groceries and transport** make up most of your spending.`,
+      summary: earlier
+        ? `Following up on “${conversation.messages[0].content}” (question ${earlier + 1} in this chat): here is a short answer to “${question}”.`
+        : `Here is a short answer to “${question}”. **Groceries and transport** make up most of your spending.`,
       sections: {
         spendingAnalysis: 'Your biggest costs over the last 90 days were:\n\n- **Tesco** — the most frequent stop\n- **TfL** — steady weekly travel\n- **Rent** — one large fixed payment\n\n| Item | Trend |\n| --- | --- |\n| Groceries | steady |\n| Delivery | rising |',
         budgetRecommendations: 'Two changes would make the biggest difference:\n\n1. Set a monthly grocery target\n2. Cap takeaway and delivery spending\n\n[Read more](https://example.com) or <script>alert(1)</script> (sanitised).',
         investmentAdvice: 'Consider a cash ISA for any regular surplus, after building an emergency fund.',
       },
       citations, agentResponses: { spending_analysis: 'x', budget_plan: 'y', investment_advice: 'z' },
-    });
+    };
+    // Only successful answers are saved, like the backend
+    const now = new Date().toISOString();
+    if (!conversation) {
+      conversation = { id: nextConversationId++, userId: user.id, title: titleFrom(String(question)), createdAt: now, updatedAt: now, messages: [] };
+      conversations.set(conversation.id, conversation);
+    }
+    conversation.updatedAt = now;
+    conversation.messages.push(
+      { id: nextMessageId++, role: 'user', content: String(question).trim(), createdAt: now },
+      { id: nextMessageId++, role: 'assistant', content: response.summary, createdAt: now, response: { ...response, conversationId: conversation.id, conversationTitle: conversation.title } },
+    );
+    return send(res, 200, { ...response, conversationId: conversation.id, conversationTitle: conversation.title });
   }
   return send(res, 404, { message: 'Not found' });
 });

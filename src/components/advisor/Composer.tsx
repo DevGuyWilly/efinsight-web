@@ -75,9 +75,9 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
         )}
       </form>
       <span className="text-xs text-ink-gray-5">
-        <span className="md:hidden">Each question is answered on its own. Answers take 5–15 seconds.</span>
+        <span className="md:hidden">Follow-ups use this chat’s earlier questions. Answers take 5–15 seconds.</span>
         <span className="hidden md:inline">
-          Each question is answered on its own — earlier questions are not used as context. Answers usually take 5–15 seconds.
+          Follow-up questions use the earlier questions and answers in this chat. Answers usually take 5–15 seconds.
         </span>
       </span>
     </div>

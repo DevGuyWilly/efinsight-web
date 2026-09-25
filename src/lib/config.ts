@@ -11,7 +11,8 @@ export const STORAGE_KEYS = {
   theme: 'efinsight.theme',
   bankConnected: (userId: number) => `efinsight.bank-connected.${userId}`,
   lastImport: (userId: number) => `efinsight.last-import.${userId}`,
-  adviceHistory: (userId: number) => `efinsight.advice-history.${userId}`,
+  /** Pre-conversations, device-local advice history. Only read to delete it; history now lives on the server. */
+  legacyAdviceHistory: (userId: number) => `efinsight.advice-history.${userId}`,
   advisorDraft: 'efinsight.advisor-draft',
   setupSkipped: 'efinsight.setup-skipped',
 } as const;

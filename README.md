@@ -43,18 +43,19 @@ With no `/api/me` endpoint, the callback page calls `/api/transactions/count` on
 | `/onboarding/bank`, `/onboarding/import`, `/onboarding/callback` | Setup steps |
 | `/app/dashboard` | KPIs, 13-week spending, top merchants, recent transactions |
 | `/app/transactions` | Search, filters, sort, client-side paging (12 per page), detail dialog |
-| `/app/advisor` | Ask a question; progress, Stop, answer with sections and cited transactions |
-| `/app/settings` | Read-only profile, reconnect bank, import, reprocess, theme, advice history, sign out |
+| `/app/advisor`, `/app/advisor/:conversationId` | Chats with follow-ups: progress, Stop, answers with sections and cited transactions; recent chats, new chat, delete |
+| `/app/settings` | Read-only profile, reconnect bank, import, reprocess, theme, clear advisor chats, sign out |
 
 ## Backend behaviour the UI accounts for
 
 - `transactionCategory` is a transaction type (`PURCHASE`, `TRANSFER`, `DIRECT_DEBIT`, ...), so filters list the values present. Top merchants group by merchant name, falling back to the description.
 - `/api/transactions` is unpaged: fetched once, then filtered, sorted and paged in memory.
 - Money is parsed to integer pence and formatted with `Intl.NumberFormat('en-GB')`. Direction comes from `transactionType`, falling back to the amount's sign.
-- `/api/plan` takes only a question (no follow-up context), takes 5-15 s (60 s timeout, Stop button), and `success: false` on HTTP 200 is an error. Only returned sections render. Markdown is sanitised and links open with `rel="noopener noreferrer"`.
+- `/api/plan` takes a question and an optional `conversationId`: without one it starts a new chat and returns its `conversationId`, which the page then moves to (`/app/advisor/:id`). Follow-ups send the id so the agents see the earlier turns. It takes 5-15 s (60 s timeout, Stop button), and `success: false` on HTTP 200 is an error. Only successful answers are saved, so a failed question goes back to the composer. Only returned sections render. Markdown is sanitised and links open with `rel="noopener noreferrer"`.
+- Chats are stored on the server (`GET/DELETE /api/conversations`, `GET/DELETE /api/conversations/{id}`), so they follow the account across devices. A chat that doesn't exist or belongs to someone else is a 404, shown as "Chat not found". The old localStorage advice history is deleted on first visit to the Advisor.
 - Citations carry the numeric row id and are joined to the loaded transactions on `id`.
 - Ingest and reprocess are long POSTs: indeterminate progress, and on a timeout "Check status" re-reads the count before retrying. A failed import offers "Reconnect bank". The backend skips transactions it already has.
-- Not available on the backend: disconnect bank (shown disabled), profile edit (read-only), advice history (stored in `localStorage` per user and device, not synced). "Last import" is recorded locally.
+- Not available on the backend: disconnect bank (shown disabled), profile edit (read-only). "Last import" is recorded locally.
 
 ## Deploy (Render)
 
@@ -73,10 +74,10 @@ Render's docs don't say whether rewrites keep query strings or how rules are ord
 src/api/         fetch client (auth header, timeout, 401), endpoints, types
 src/app/         routes, guards (RequireAuth, PublicOnly, RequireSetup)
 src/components/  ui, layout, feedback, bank, dashboard, transactions, advisor
-src/hooks/       useSetupState, useTransactions, useIngest, usePlan
+src/hooks/       useSetupState, useTransactions, useIngest, usePlan, useConversations
 src/lib/         money, dates, transaction logic, session, storage, config
 src/pages/       one folder per screen
-src/stores/      auth, theme, advice history
+src/stores/      auth, theme
 scripts/mock-backend.mjs   dependency-free stand-in for the API
 tests/                     Vitest
 ```

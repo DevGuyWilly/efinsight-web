@@ -8,6 +8,7 @@ import { Page } from '@/components/layout/Page';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Segmented } from '@/components/ui/Controls';
+import { useClearConversations, useConversationList } from '@/hooks/useConversations';
 import { useIngest, useReprocess, useVerifyImport } from '@/hooks/useIngest';
 import { useSetupState } from '@/hooks/useSetupState';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -15,7 +16,6 @@ import { startBankConnect } from '@/lib/bank';
 import { formatDayTime } from '@/lib/dates';
 import { resolveLastImport } from '@/lib/lastImport';
 import { useAuth, useUser } from '@/stores/auth';
-import { clearAdvice, useAdviceHistory } from '@/stores/history';
 import { useTheme, type ThemePreference } from '@/stores/theme';
 
 function Section({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
@@ -59,7 +59,9 @@ export default function SettingsPage() {
   const reprocess = useReprocess();
   const verify = useVerifyImport();
   const { preference, setPreference } = useTheme();
-  const history = useAdviceHistory(user.id);
+  const chats = useConversationList();
+  const clearChats = useClearConversations();
+  const chatCount = chats.data?.length ?? 0;
 
   const connected = setup.bankConnected;
   const lastImport = resolveLastImport(user.id, tx.raw);
@@ -173,23 +175,36 @@ export default function SettingsPage() {
           />
         </Section>
 
-        <Section title="Advice history" note="History is stored in this browser only. It isn’t synced and won’t appear on other devices.">
+        <Section title="Advisor chats" note="Chats are saved to your account, so they appear on every device you sign in on.">
           <Row
-            title="Saved questions"
-            description={history.length ? `${history.length} saved on this device.` : 'Nothing saved yet. Questions you ask the advisor are kept here.'}
+            title="Saved chats"
+            description={
+              chats.isLoading
+                ? 'Loading…'
+                : chats.isError
+                  ? 'Couldn’t load your chats.'
+                  : chatCount
+                    ? `${chatCount} ${chatCount === 1 ? 'chat' : 'chats'} saved.`
+                    : 'Nothing saved yet. Chats with the advisor are kept here.'
+            }
             action={
               <Button
                 variant="outline"
-                disabled={history.length === 0}
+                disabled={chatCount === 0 || clearChats.isPending}
                 iconLeft={<Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />}
                 onClick={() => {
-                  if (window.confirm('Clear all saved advisor questions on this device? This can’t be undone.')) clearAdvice(user.id);
+                  if (window.confirm('Delete all your advisor chats? This can’t be undone.')) clearChats.mutate();
                 }}
               >
                 Clear history
               </Button>
             }
           />
+          {clearChats.isError ? (
+            <Alert title="Couldn’t clear your chats">
+              {clearChats.error instanceof Error ? clearChats.error.message : 'Something went wrong.'}
+            </Alert>
+          ) : null}
         </Section>
 
         <Section title="Session">

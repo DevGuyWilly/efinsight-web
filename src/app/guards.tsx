@@ -40,7 +40,8 @@ export function RequireSetup() {
   const setup = useSetupState();
   const { setupSkipped } = useAuth();
   const { pathname } = useLocation();
-  const title = TITLES[pathname] ?? 'EFinSight';
+  // Prefix match so nested routes such as /app/advisor/42 get their section's title
+  const title = Object.entries(TITLES).find(([path]) => pathname === path || pathname.startsWith(`${path}/`))?.[1] ?? 'EFinSight';
 
   if (setup.step === 'loading') {
     return (

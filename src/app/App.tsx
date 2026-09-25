@@ -40,7 +40,7 @@ export function App() {
             <Route element={<RequireSetup />}>
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="transactions" element={<TransactionsPage />} />
-              <Route path="advisor" element={<AdvisorPage />} />
+              <Route path="advisor/:conversationId?" element={<AdvisorPage />} />
             </Route>
             <Route path="settings" element={<SettingsPage />} />
           </Route>
