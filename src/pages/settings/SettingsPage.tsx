@@ -1,13 +1,15 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Landmark, LogOut, RefreshCw, Trash2, Unlink, Wrench } from 'lucide-react';
+import { Download, KeyRound, Landmark, LogOut, RefreshCw, Trash2, Unlink, Wrench } from 'lucide-react';
 import { BankStatusBadge } from '@/components/bank/BankStatus';
 import { ImportError, ImportProgress } from '@/components/bank/ImportFeedback';
 import { Alert } from '@/components/feedback/Alert';
 import { Page } from '@/components/layout/Page';
+import { ChangePasswordForm } from '@/components/settings/ChangePasswordForm';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Segmented } from '@/components/ui/Controls';
+import { useChangePassword } from '@/hooks/useChangePassword';
 import { useClearConversations, useConversationList } from '@/hooks/useConversations';
 import { useIngest, useReprocess, useVerifyImport } from '@/hooks/useIngest';
 import { useSetupState } from '@/hooks/useSetupState';
@@ -59,6 +61,8 @@ export default function SettingsPage() {
   const reprocess = useReprocess();
   const verify = useVerifyImport();
   const { preference, setPreference } = useTheme();
+  const [changingPassword, setChangingPassword] = useState(false);
+  const changePassword = useChangePassword();
   const chats = useConversationList();
   const clearChats = useClearConversations();
   const chatCount = chats.data?.length ?? 0;
@@ -71,9 +75,34 @@ export default function SettingsPage() {
   return (
     <Page title="Settings">
       <div className="mx-auto flex w-full max-w-[720px] flex-col gap-7 py-2">
-        <Section title="Profile" note="Profile details are read-only for now.">
+        <Section title="Profile" note="Name and email are read-only for now.">
           <Row title="Name" description={fullName || '—'} />
           <Row title="Email" description={user.email} />
+          <Row
+            title="Password"
+            description="Change the password you use to log in."
+            action={
+              changingPassword ? null : (
+                <Button
+                  variant="outline"
+                  iconLeft={<KeyRound size={16} strokeWidth={1.5} aria-hidden="true" />}
+                  onClick={() => setChangingPassword(true)}
+                >
+                  Change password
+                </Button>
+              )
+            }
+          >
+            {changingPassword ? (
+              <ChangePasswordForm
+                onSubmit={(payload) => changePassword.mutateAsync(payload)}
+                onDone={() => {
+                  changePassword.reset();
+                  setChangingPassword(false);
+                }}
+              />
+            ) : null}
+          </Row>
         </Section>
 
         <Section title="Bank connection" note="Reconnecting sends you to your bank to renew access. Existing transactions are kept.">

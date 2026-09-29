@@ -167,6 +167,32 @@ const server = http.createServer(async (req, res) => {
   const user = header.startsWith('Bearer ') ? verify(header.slice(7)) : null;
   if (!user) return send(res, 403, undefined);
 
+  if (req.method === 'POST' && path === '/api/users/change-password') {
+    const b = await readBody(req);
+    if (b.currentPassword !== user.password) {
+      return send(res, 400, {
+        message: 'Current password is incorrect',
+        timestamp: new Date().toISOString(),
+        errors: [{ field: 'currentPassword', message: 'Current password is incorrect' }],
+      });
+    }
+    if (!b.newPassword || b.newPassword.length < 8) {
+      return send(res, 400, {
+        message: 'Validation failed',
+        timestamp: new Date().toISOString(),
+        errors: [{ field: 'newPassword', message: 'Password must be at least 8 characters' }],
+      });
+    }
+    if (b.newPassword === b.currentPassword) {
+      return send(res, 400, {
+        message: 'New password must be different from the current password',
+        timestamp: new Date().toISOString(),
+        errors: [{ field: 'newPassword', message: 'New password must be different from the current password' }],
+      });
+    }
+    user.password = b.newPassword;
+    return send(res, 200, { message: 'Password updated successfully' });
+  }
   if (req.method === 'GET' && path === '/api/transactions/count') {
     return send(res, 200, { count: (txnsByUser.get(user.id) ?? []).length, userId: user.id });
   }

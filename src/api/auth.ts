@@ -29,3 +29,13 @@ export async function signup(payload: SignupPayload): Promise<AuthSession> {
   const raw = await request<RawAuthResponse>('/api/auth/signup', { method: 'POST', body: payload, auth: false });
   return normaliseAuth(raw);
 }
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/** Not under /api/auth: that prefix skips the Bearer token, and this route needs it to know whose password to change. */
+export function changePassword(payload: ChangePasswordPayload): Promise<{ message: string }> {
+  return request<{ message: string }>('/api/users/change-password', { method: 'POST', body: payload });
+}
