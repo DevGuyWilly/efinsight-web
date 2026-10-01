@@ -4,6 +4,8 @@ export interface User {
   firstName: string;
   lastName: string;
   bankConnected: boolean;
+  /** Hides money figures on the dashboard. Persisted server-side, so it follows the user across devices. */
+  hideBalances: boolean;
 }
 
 /**
@@ -20,6 +22,7 @@ export interface RawAuthResponse {
   firstName?: string;
   lastName?: string;
   bankConnected?: boolean;
+  hideBalances?: boolean;
 }
 
 export interface AuthSession {

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDownLeft, ArrowLeftRight, ArrowRight, ArrowUpRight, ChevronRight, Download, RefreshCw, Scale, Sparkles } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeftRight, ArrowRight, ArrowUpRight, ChevronRight, Download, Eye, EyeOff, RefreshCw, Scale, Sparkles } from 'lucide-react';
 import { Alert } from '@/components/feedback/Alert';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { BankStatusBadge } from '@/components/bank/BankStatus';
@@ -12,6 +12,7 @@ import { CompactRow } from '@/components/transactions/TransactionParts';
 import { Button, LinkButton } from '@/components/ui/Button';
 import { Card, CardHeader, Skeleton } from '@/components/ui/Card';
 import { useIngest, useVerifyImport } from '@/hooks/useIngest';
+import { useUpdateHideBalances } from '@/hooks/usePreferences';
 import { useTransactions } from '@/hooks/useTransactions';
 import { formatDay, formatDayTime } from '@/lib/dates';
 import { resolveLastImport } from '@/lib/lastImport';
@@ -25,6 +26,20 @@ export default function DashboardPage() {
   const tx = useTransactions();
   const ingest = useIngest();
   const verify = useVerifyImport();
+  const hideBalances = useUpdateHideBalances();
+  const hidden = user.hideBalances;
+
+  const hideToggle = (
+    <button
+      type="button"
+      aria-label={hidden ? 'Show balances' : 'Hide balances'}
+      title={hidden ? 'Show balances' : 'Hide balances'}
+      onClick={() => hideBalances.mutate(!hidden)}
+      className="flex size-10 shrink-0 items-center justify-center rounded-md text-ink-gray-8 hover:bg-surface-gray-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-4 md:size-7"
+    >
+      {hidden ? <EyeOff size={16} strokeWidth={1.5} aria-hidden="true" /> : <Eye size={16} strokeWidth={1.5} aria-hidden="true" />}
+    </button>
+  );
 
   const view = useMemo(() => {
     if (!tx.txns) return null;
@@ -50,6 +65,7 @@ export default function DashboardPage() {
 
   const actions = (
     <>
+      {hideToggle}
       {importButton}
       <LinkButton to="/app/advisor" iconLeft={<Sparkles size={16} strokeWidth={1.5} aria-hidden="true" />}>
         Ask advisor
@@ -130,20 +146,20 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
         <KpiCard label="Transactions" value={summary.count.toLocaleString('en-GB')} hint={range} icon={ArrowLeftRight} />
-        <KpiCard label="Money out" value={formatMoney(summary.outPence, currency)} hint="Debits" icon={ArrowUpRight} />
-        <KpiCard label="Money in" value={formatMoney(summary.inPence, currency)} hint="Credits" icon={ArrowDownLeft} />
-        <KpiCard label="Net" value={formatMoney(summary.netPence, currency, { signed: true })} hint="In minus out" icon={Scale} />
+        <KpiCard label="Money out" value={formatMoney(summary.outPence, currency)} hint="Debits" icon={ArrowUpRight} hidden={hidden} />
+        <KpiCard label="Money in" value={formatMoney(summary.inPence, currency)} hint="Credits" icon={ArrowDownLeft} hidden={hidden} />
+        <KpiCard label="Net" value={formatMoney(summary.netPence, currency, { signed: true })} hint="In minus out" icon={Scale} hidden={hidden} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader title="Weekly spending" hint={`Last ${weeks.length} weeks`} />
-          <WeeklySpendChart buckets={weeks} currency={currency} />
+          <WeeklySpendChart buckets={weeks} currency={currency} hidden={hidden} />
         </Card>
         <Card>
           <CardHeader title="Top merchants" hint="By spend" />
           {merchants.length ? (
-            <MerchantBars merchants={merchants} currency={currency} />
+            <MerchantBars merchants={merchants} currency={currency} hidden={hidden} />
           ) : (
             <p className="m-0 mt-3 text-ink-gray-6">No spending to show yet.</p>
           )}
@@ -166,7 +182,7 @@ export default function DashboardPage() {
           />
           <div className="-mx-4 mt-2">
             {recent.map((t) => (
-              <CompactRow key={t.id} txn={t} />
+              <CompactRow key={t.id} txn={t} hidden={hidden} />
             ))}
           </div>
         </Card>

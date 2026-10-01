@@ -51,10 +51,19 @@ function verify(token) {
     return null;
   }
 }
-const authResponse = (u) => ({ token: sign(u), type: 'Bearer', userId: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, bankConnected: u.bankConnected });
+const authResponse = (u) => ({
+  token: sign(u),
+  type: 'Bearer',
+  userId: u.id,
+  email: u.email,
+  firstName: u.firstName,
+  lastName: u.lastName,
+  bankConnected: u.bankConnected,
+  hideBalances: u.hideBalances,
+});
 
 function addUser(email, password, firstName, lastName, bankConnected) {
-  const u = { id: nextUserId++, email, password, firstName, lastName, bankConnected };
+  const u = { id: nextUserId++, email, password, firstName, lastName, bankConnected, hideBalances: false };
   users.set(email, u);
   return u;
 }
@@ -167,6 +176,11 @@ const server = http.createServer(async (req, res) => {
   const user = header.startsWith('Bearer ') ? verify(header.slice(7)) : null;
   if (!user) return send(res, 403, undefined);
 
+  if (req.method === 'POST' && path === '/api/users/preferences') {
+    const b = await readBody(req);
+    if (typeof b.hideBalances === 'boolean') user.hideBalances = b.hideBalances;
+    return send(res, 200, { hideBalances: user.hideBalances });
+  }
   if (req.method === 'POST' && path === '/api/users/change-password') {
     const b = await readBody(req);
     if (b.currentPassword !== user.password) {

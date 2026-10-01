@@ -169,19 +169,24 @@ describe('conversations api', () => {
 
 describe('normaliseAuth', () => {
   it('accepts the flat backend shape', () => {
-    expect(normaliseAuth({ token: 't', userId: 5, email: 'a@b.co', firstName: 'A', lastName: 'B', bankConnected: true })).toEqual({
+    expect(
+      normaliseAuth({ token: 't', userId: 5, email: 'a@b.co', firstName: 'A', lastName: 'B', bankConnected: true, hideBalances: true }),
+    ).toEqual({
       token: 't',
-      user: { id: 5, email: 'a@b.co', firstName: 'A', lastName: 'B', bankConnected: true },
+      user: { id: 5, email: 'a@b.co', firstName: 'A', lastName: 'B', bankConnected: true, hideBalances: true },
     });
   });
 
   it('accepts the nested { token, user } shape', () => {
-    expect(normaliseAuth({ token: 't', user: { id: 9, email: 'a@b.co', firstName: 'A', lastName: 'B', bankConnected: false } }).user).toEqual({
+    expect(
+      normaliseAuth({ token: 't', user: { id: 9, email: 'a@b.co', firstName: 'A', lastName: 'B', bankConnected: false } }).user,
+    ).toEqual({
       id: 9,
       email: 'a@b.co',
       firstName: 'A',
       lastName: 'B',
       bankConnected: false,
+      hideBalances: false,
     });
   });
 

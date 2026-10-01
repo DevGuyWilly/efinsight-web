@@ -21,6 +21,8 @@ interface AuthContextValue {
   signOut: () => void;
   /** No /api/me endpoint exists, so bankConnected is tracked locally once the OAuth callback confirms it. */
   setBankConnected: (connected: boolean) => void;
+  /** Reflects a change already sent to (or about to be sent to) POST /api/users/preferences. */
+  setHideBalances: (hidden: boolean) => void;
   skipSetup: () => void;
   clearSessionExpired: () => void;
 }
@@ -105,6 +107,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setHideBalances = useCallback((hidden: boolean) => {
+    setAuth((prev) => {
+      if (!prev.user || prev.user.hideBalances === hidden) return prev;
+      const next = { ...prev.user, hideBalances: hidden };
+      writeJson(STORAGE_KEYS.user, next);
+      return { ...prev, user: next };
+    });
+  }, []);
+
   const skipSetup = useCallback(() => {
     writeString(STORAGE_KEYS.setupSkipped, '1', 'session');
     setSetupSkipped(true);
@@ -122,10 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       signOut: clearSession,
       setBankConnected,
+      setHideBalances,
       skipSetup,
       clearSessionExpired: () => setSessionExpired(false),
     }),
-    [user, token, sessionExpired, loginAt, setupSkipped, signIn, register, clearSession, setBankConnected, skipSetup],
+    [user, token, sessionExpired, loginAt, setupSkipped, signIn, register, clearSession, setBankConnected, setHideBalances, skipSetup],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

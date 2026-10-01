@@ -1,5 +1,8 @@
 /** Money is handled as integer pence everywhere; floats only exist at the API boundary. */
 
+/** Stand-in for a hidden money figure (the "hide balances" preference). Same shape everywhere it appears. */
+export const MASKED_AMOUNT = '••••••';
+
 export function toPence(value: number | string | null | undefined): number {
   if (value == null || value === '') return 0;
   const n = typeof value === 'number' ? value : Number(String(value).replace(/,/g, ''));

@@ -1,3 +1,4 @@
+import { EyeOff } from 'lucide-react';
 import { formatDay } from '@/lib/dates';
 import { formatMoney, formatPounds } from '@/lib/money';
 import { niceAxisMax, type MerchantTotal, type WeekBucket } from '@/lib/transactions';
@@ -5,8 +6,32 @@ import { niceAxisMax, type MerchantTotal, type WeekBucket } from '@/lib/transact
 const CHART_HEIGHT = 180;
 const GRIDLINES = 4;
 
+/** Stands in for a chart or list when balances are hidden. No real figures enter the DOM at all. */
+function HiddenPlaceholder({ label, height }: { label: string; height?: number }) {
+  return (
+    <div
+      role="img"
+      aria-label={label}
+      style={height ? { height } : undefined}
+      className="mt-5 flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-outline-gray-2 py-8 text-ink-gray-5"
+    >
+      <EyeOff size={18} strokeWidth={1.5} aria-hidden="true" />
+      <span className="text-sm">{label}</span>
+    </div>
+  );
+}
+
+interface WeeklySpendChartProps {
+  buckets: WeekBucket[];
+  currency: string;
+  /** Shows a placeholder instead (the "hide balances" preference): bar heights and axis labels are money too. */
+  hidden?: boolean;
+}
+
 /** 13-week bar chart of debits. Plain divs: no chart library needed for a single series. */
-export function WeeklySpendChart({ buckets, currency }: { buckets: WeekBucket[]; currency: string }) {
+export function WeeklySpendChart({ buckets, currency, hidden }: WeeklySpendChartProps) {
+  if (hidden) return <HiddenPlaceholder label="Weekly spending hidden" height={CHART_HEIGHT + 28} />;
+
   const values = buckets.map((b) => b.pence);
   const peak = Math.max(...values, 0);
   const { max, step } = niceAxisMax(peak, GRIDLINES);
@@ -54,8 +79,17 @@ export function WeeklySpendChart({ buckets, currency }: { buckets: WeekBucket[];
   );
 }
 
+interface MerchantBarsProps {
+  merchants: MerchantTotal[];
+  currency: string;
+  /** Shows a placeholder instead (the "hide balances" preference): bar widths encode spend even without labels. */
+  hidden?: boolean;
+}
+
 /** Horizontal bars scaled to the biggest merchant. */
-export function MerchantBars({ merchants, currency }: { merchants: MerchantTotal[]; currency: string }) {
+export function MerchantBars({ merchants, currency, hidden }: MerchantBarsProps) {
+  if (hidden) return <HiddenPlaceholder label="Top merchants hidden" />;
+
   const top = merchants[0]?.pence ?? 1;
   return (
     <ul className="m-0 mt-2 flex list-none flex-col gap-3.5 p-0">

@@ -16,6 +16,7 @@ export function normaliseAuth(raw: RawAuthResponse): AuthSession {
       firstName: src.firstName ?? '',
       lastName: src.lastName ?? '',
       bankConnected: Boolean(src.bankConnected),
+      hideBalances: Boolean(src.hideBalances),
     },
   };
 }

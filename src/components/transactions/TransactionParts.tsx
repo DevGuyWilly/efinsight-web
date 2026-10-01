@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Card';
 import { cn } from '@/lib/cn';
 import { formatDay } from '@/lib/dates';
-import { formatMoney } from '@/lib/money';
+import { formatMoney, MASKED_AMOUNT } from '@/lib/money';
 import { initialOf, type Direction, type Txn } from '@/lib/transactions';
 
 /** Initial avatar + merchant (or description) + secondary line. */
@@ -22,10 +22,19 @@ export function MerchantCell({ txn, meta }: { txn: Pick<Txn, 'title' | 'subtitle
 }
 
 /** Signed, tabular-figure amount: −£45.20 / +£2,450.00. Colour is not used to encode direction. */
-export function Amount({ txn, className }: { txn: Pick<Txn, 'pence' | 'currency'>; className?: string }) {
+export function Amount({
+  txn,
+  className,
+  hidden,
+}: {
+  txn: Pick<Txn, 'pence' | 'currency'>;
+  className?: string;
+  /** Replaces the figure with a masked placeholder (the "hide balances" preference). Opt-in; defaults to visible. */
+  hidden?: boolean;
+}) {
   return (
     <span className={cn('text-right font-medium tabular-nums text-ink-gray-9', className)}>
-      {formatMoney(txn.pence, txn.currency, { signed: true })}
+      {hidden ? MASKED_AMOUNT : formatMoney(txn.pence, txn.currency, { signed: true })}
     </span>
   );
 }
@@ -37,10 +46,12 @@ export function DirectionBadge({ direction }: { direction: Direction }) {
 interface CompactRowProps {
   txn: Txn;
   height?: 44 | 48;
+  /** Passed straight through to Amount. Defaults to visible. */
+  hidden?: boolean;
 }
 
 /** Date | merchant | amount. Used for recent transactions and advisor sources. */
-export function CompactRow({ txn, height = 48 }: CompactRowProps) {
+export function CompactRow({ txn, height = 48, hidden }: CompactRowProps) {
   return (
     <div
       style={{ height }}
@@ -48,7 +59,7 @@ export function CompactRow({ txn, height = 48 }: CompactRowProps) {
     >
       <span className="hidden w-[76px] shrink-0 text-sm text-ink-gray-6 sm:block">{formatDay(txn.date)}</span>
       <MerchantCell txn={txn} meta={formatDay(txn.date)} />
-      <Amount txn={txn} className="shrink-0 sm:w-[110px]" />
+      <Amount txn={txn} className="shrink-0 sm:w-[110px]" hidden={hidden} />
     </div>
   );
 }
