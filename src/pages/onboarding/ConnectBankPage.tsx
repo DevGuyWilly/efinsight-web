@@ -1,12 +1,11 @@
-import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { CalendarDays, Landmark, Lock, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { Alert } from '@/components/feedback/Alert';
 import { OnboardingPage } from '@/components/layout/OnboardingPage';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
+import { useBankConnect } from '@/hooks/useBankConnect';
 import { useSetupState } from '@/hooks/useSetupState';
-import { startBankConnect } from '@/lib/bank';
 import { useAuth } from '@/stores/auth';
 
 const points: { icon: LucideIcon; text: string }[] = [
@@ -19,7 +18,7 @@ export default function ConnectBankPage() {
   const setup = useSetupState();
   const { skipSetup } = useAuth();
   const navigate = useNavigate();
-  const [redirecting, setRedirecting] = useState(false);
+  const bank = useBankConnect();
 
   if (setup.step === 'loading') return <PageSpinner label="Loading your account" />;
   if (setup.step === 'ready') return <Navigate to="/app/dashboard" replace />;
@@ -62,15 +61,15 @@ export default function ConnectBankPage() {
         <Button
           size="lg"
           fullWidth
-          loading={redirecting}
+          loading={bank.connecting}
           iconLeft={<Landmark size={16} strokeWidth={1.5} aria-hidden="true" />}
-          onClick={() => {
-            setRedirecting(true);
-            startBankConnect();
-          }}
+          onClick={bank.connect}
         >
           Connect bank
         </Button>
+        {bank.errorMessage ? (
+          <Alert title="Couldn’t start the bank connection">{bank.errorMessage}</Alert>
+        ) : null}
         <span className="text-center text-xs leading-normal text-ink-gray-5">
           You’ll leave EFinSight briefly to choose your bank, then return here.
         </span>

@@ -1,5 +1,5 @@
 import { request } from './client';
-import type { AuthSession, LoginPayload, RawAuthResponse, SignupPayload } from './types';
+import type { AuthSession, LoginPayload, MeResponse, RawAuthResponse, SignupPayload } from './types';
 
 /** Accepts both `{ token, userId, email, ... }` (current backend) and `{ token, user: { id, ... } }`. */
 export function normaliseAuth(raw: RawAuthResponse): AuthSession {
@@ -29,6 +29,14 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
 export async function signup(payload: SignupPayload): Promise<AuthSession> {
   const raw = await request<RawAuthResponse>('/api/auth/signup', { method: 'POST', body: payload, auth: false });
   return normaliseAuth(raw);
+}
+
+/**
+ * The signed-in user as the server has them right now. The copy from login goes stale once the bank is connected
+ * or a preference is changed on another device, so the app refreshes from here.
+ */
+export function getCurrentUser(signal?: AbortSignal): Promise<MeResponse> {
+  return request<MeResponse>('/api/me', { signal });
 }
 
 export interface ChangePasswordPayload {

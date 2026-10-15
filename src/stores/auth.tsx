@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as authApi from '@/api/auth';
+import { PREFERENCES_MUTATION_KEY } from '@/api/preferences';
 import type { AuthSession, SignupPayload, User } from '@/api/types';
 import { STORAGE_KEYS } from '@/lib/config';
 import { setUnauthorizedHandler, tokenExpiry, tokenStore } from '@/lib/session';
@@ -29,6 +30,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** The signed-in user as the server has them (GET /api/me). Preference changes invalidate it. */
+export const ME_QUERY_KEY = ['me'] as const;
+
 function loadInitial(): { token: string | null; user: User | null } {
   const token = tokenStore.get();
   const user = readJson<User>(STORAGE_KEYS.user);
@@ -52,6 +56,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [loginAt, setLoginAt] = useState<string | null>(() => readString(STORAGE_KEYS.loginAt));
   const [setupSkipped, setSetupSkipped] = useState(() => readString(STORAGE_KEYS.setupSkipped, 'session') === '1');
+
+  // The copy of the user from login goes stale (bank connected, a preference changed on another device), so keep
+  // it fresh from the server: at sign-in, then again whenever this tab regains focus.
+  const me = useQuery({
+    queryKey: ME_QUERY_KEY,
+    queryFn: ({ signal }) => authApi.getCurrentUser(signal),
+    enabled: Boolean(token),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+
+  useEffect(() => {
+    const fresh = me.data;
+    if (!fresh) return;
+    setAuth((prev) => {
+      if (!prev.user || prev.user.id !== fresh.userId) return prev;
+      // While a preference save is in flight, what's on screen is newer than what the server last said
+      const saving = queryClient.isMutating({ mutationKey: PREFERENCES_MUTATION_KEY }) > 0;
+      const next: User = {
+        ...prev.user,
+        email: fresh.email,
+        firstName: fresh.firstName,
+        lastName: fresh.lastName,
+        // Never goes back to false once connected, so this can't fight the count-based inference in useSetupState
+        bankConnected: prev.user.bankConnected || fresh.bankConnected,
+        hideBalances: saving ? prev.user.hideBalances : fresh.hideBalances,
+        createdAt: fresh.createdAt ?? prev.user.createdAt ?? null,
+      };
+      const unchanged = (Object.keys(next) as (keyof User)[]).every((k) => next[k] === prev.user![k]);
+      if (unchanged) return prev;
+      writeJson(STORAGE_KEYS.user, next);
+      return { ...prev, user: next };
+    });
+  }, [me.data, queryClient]);
 
   const clearSession = useCallback(() => {
     tokenStore.clear();

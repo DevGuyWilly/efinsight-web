@@ -2,7 +2,8 @@
 /**
  * Dependency-free stand-in for the EFinSight Spring backend, for developing the UI without Vertex AI / TrueLayer.
  * Mirrors the real response shapes (flat AuthResponse, Transaction entity, PlanResponseDto, conversations) and
- * quirks: unauthenticated requests get 403, /api/plan is slow, connect-bank redirects to /auth/success, another
+ * quirks: unauthenticated requests get 401, /api/plan is slow, connect-bank takes a one-time ticket from
+ * POST /api/bank/connect-url and redirects to /auth/success, another
  * user's conversation is a 404. Conversations live in memory and reset on restart.
  *
  *   npm run mock            # listens on :8080
@@ -51,6 +52,21 @@ function verify(token) {
     return null;
   }
 }
+// Connect tickets: id -> { userId, expiresAt }. Single use, 60 s, like the real backend.
+const tickets = new Map();
+function issueTicket(user) {
+  const id = `mock-ticket-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+  tickets.set(id, { userId: user.id, expiresAt: Date.now() + 60_000 });
+  return id;
+}
+function redeemTicket(id) {
+  const t = id ? tickets.get(id) : null;
+  if (!t) return null;
+  tickets.delete(id); // used, whether or not it was still valid
+  if (t.expiresAt < Date.now()) return null;
+  return [...users.values()].find((u) => u.id === t.userId) ?? null;
+}
+
 const authResponse = (u) => ({
   token: sign(u),
   type: 'Bearer',
@@ -63,7 +79,7 @@ const authResponse = (u) => ({
 });
 
 function addUser(email, password, firstName, lastName, bankConnected) {
-  const u = { id: nextUserId++, email, password, firstName, lastName, bankConnected, hideBalances: false };
+  const u = { id: nextUserId++, email, password, firstName, lastName, bankConnected, hideBalances: false, createdAt: new Date().toISOString().slice(0, 19) };
   users.set(email, u);
   return u;
 }
@@ -155,7 +171,8 @@ const server = http.createServer(async (req, res) => {
     return send(res, 200, authResponse(u));
   }
   if (req.method === 'GET' && path === '/auth/connect-bank') {
-    const u = verify(url.searchParams.get('token') ?? '');
+    // The login JWT is no longer accepted here: only a ticket from POST /api/bank/connect-url
+    const u = redeemTicket(url.searchParams.get('ticket'));
     if (!u) {
       res.writeHead(302, { Location: '/auth/error?message=invalid_token' });
       return res.end();
@@ -174,7 +191,25 @@ const server = http.createServer(async (req, res) => {
   // ---- protected: Spring answers unauthenticated requests with 403 ----
   const header = req.headers.authorization ?? '';
   const user = header.startsWith('Bearer ') ? verify(header.slice(7)) : null;
-  if (!user) return send(res, 403, undefined);
+  if (!user) {
+    return send(res, 401, { message: 'Authentication required', timestamp: new Date().toISOString() }, { 'WWW-Authenticate': 'Bearer' });
+  }
+
+  if (req.method === 'GET' && path === '/api/me') {
+    return send(res, 200, {
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      bankConnected: user.bankConnected,
+      hideBalances: user.hideBalances,
+      createdAt: user.createdAt,
+      lastLoginAt: null,
+    });
+  }
+  if (req.method === 'POST' && path === '/api/bank/connect-url') {
+    return send(res, 200, { url: `/auth/connect-bank?ticket=${issueTicket(user)}` });
+  }
 
   if (req.method === 'POST' && path === '/api/users/preferences') {
     const b = await readBody(req);

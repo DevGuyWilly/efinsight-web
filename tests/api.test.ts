@@ -12,7 +12,8 @@ vi.stubGlobal('window', {
 });
 
 const { request, ApiError } = await import('@/api/client');
-const { normaliseAuth } = await import('@/api/auth');
+const { getCurrentUser, normaliseAuth } = await import('@/api/auth');
+const { isConnectUrl, requestBankConnectUrl } = await import('@/api/bank');
 const { askPlan } = await import('@/api/plan');
 const { deleteAllConversations, deleteConversation, getConversation, listConversations } = await import('@/api/conversations');
 const { setUnauthorizedHandler, tokenStore } = await import('@/lib/session');
@@ -164,6 +165,61 @@ describe('conversations api', () => {
     await deleteAllConversations();
     expect(fetchMock.mock.calls[0][0]).toBe('/api/conversations');
     expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe('DELETE');
+  });
+});
+
+describe('bank connect url', () => {
+  beforeEach(() => {
+    store.clear();
+    tokenStore.set('jwt-123');
+  });
+
+  it('asks the API for a ticket with a POST and the Bearer token, not by putting the JWT in a url', async () => {
+    const fetchMock = respond(200, { url: '/auth/connect-bank?ticket=abc.def.ghi' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(requestBankConnectUrl()).resolves.toEqual({ url: '/auth/connect-bank?ticket=abc.def.ghi' });
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/bank/connect-url');
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(init.method).toBe('POST');
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer jwt-123');
+  });
+
+  it('refuses to navigate anywhere but the connect-bank route on this origin', async () => {
+    for (const url of ['https://evil.example/auth/connect-bank?ticket=x', '//evil.example/x', '/somewhere/else', '/auth/connect-bank?token=jwt', undefined]) {
+      vi.stubGlobal('fetch', respond(200, { url }));
+      await expect(requestBankConnectUrl()).rejects.toThrow('Unexpected response');
+    }
+  });
+
+  it('recognises only a ticket url', () => {
+    expect(isConnectUrl('/auth/connect-bank?ticket=abc')).toBe(true);
+    expect(isConnectUrl('/auth/connect-bank?ticket=abc//def')).toBe(false);
+    expect(isConnectUrl('/auth/connect-bank?token=abc')).toBe(false);
+    expect(isConnectUrl('https://auth.truelayer.com/')).toBe(false);
+    expect(isConnectUrl(null)).toBe(false);
+  });
+
+  it('treats a 401 from the ticket endpoint as an expired session', async () => {
+    vi.stubGlobal('fetch', respond(401, { message: 'Authentication required' }));
+    await expect(requestBankConnectUrl()).rejects.toMatchObject({ kind: 'session' });
+  });
+});
+
+describe('current user', () => {
+  beforeEach(() => {
+    store.clear();
+    tokenStore.set('jwt-123');
+  });
+
+  it('reads GET /api/me', async () => {
+    const fetchMock = respond(200, { userId: 5, email: 'a@b.co', firstName: 'A', lastName: 'B', bankConnected: true, hideBalances: false, createdAt: '2026-09-03T10:00:00' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getCurrentUser()).resolves.toMatchObject({ userId: 5, bankConnected: true, createdAt: '2026-09-03T10:00:00' });
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/me');
+    expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe('GET');
   });
 });
 

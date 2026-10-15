@@ -9,13 +9,13 @@ import { ChangePasswordForm } from '@/components/settings/ChangePasswordForm';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Segmented } from '@/components/ui/Controls';
+import { useBankConnect } from '@/hooks/useBankConnect';
 import { useChangePassword } from '@/hooks/useChangePassword';
 import { useClearConversations, useConversationList } from '@/hooks/useConversations';
 import { useIngest, useReprocess, useVerifyImport } from '@/hooks/useIngest';
 import { useSetupState } from '@/hooks/useSetupState';
 import { useTransactions } from '@/hooks/useTransactions';
-import { startBankConnect } from '@/lib/bank';
-import { formatDayTime } from '@/lib/dates';
+import { formatDayTime, formatDayYear } from '@/lib/dates';
 import { resolveLastImport } from '@/lib/lastImport';
 import { useAuth, useUser } from '@/stores/auth';
 import { useTheme, type ThemePreference } from '@/stores/theme';
@@ -63,6 +63,7 @@ export default function SettingsPage() {
   const { preference, setPreference } = useTheme();
   const [changingPassword, setChangingPassword] = useState(false);
   const changePassword = useChangePassword();
+  const bank = useBankConnect();
   const chats = useConversationList();
   const clearChats = useClearConversations();
   const chatCount = chats.data?.length ?? 0;
@@ -78,6 +79,7 @@ export default function SettingsPage() {
         <Section title="Profile" note="Name and email are read-only for now.">
           <Row title="Name" description={fullName || '—'} />
           <Row title="Email" description={user.email} />
+          {user.createdAt ? <Row title="Member since" description={formatDayYear(user.createdAt)} /> : null}
           <Row
             title="Password"
             description="Change the password you use to log in."
@@ -115,11 +117,18 @@ export default function SettingsPage() {
               </span>
             }
             action={
-              <Button variant="outline" iconLeft={<Landmark size={16} strokeWidth={1.5} aria-hidden="true" />} onClick={startBankConnect}>
+              <Button
+                variant="outline"
+                loading={bank.connecting}
+                iconLeft={<Landmark size={16} strokeWidth={1.5} aria-hidden="true" />}
+                onClick={bank.connect}
+              >
                 {connected ? 'Reconnect bank' : 'Connect bank'}
               </Button>
             }
-          />
+          >
+            {bank.errorMessage ? <Alert title="Couldn’t start the bank connection">{bank.errorMessage}</Alert> : null}
+          </Row>
           <Row
             title="Disconnect bank"
             description="Removing the bank link isn’t available yet."

@@ -3,7 +3,7 @@ import { Landmark, RefreshCw } from 'lucide-react';
 import { isApiError } from '@/api/client';
 import { Alert } from '@/components/feedback/Alert';
 import { Button } from '@/components/ui/Button';
-import { startBankConnect } from '@/lib/bank';
+import { useBankConnect } from '@/hooks/useBankConnect';
 
 /** Indeterminate progress for the long ingest / reprocess POSTs (there is no real progress signal). */
 export function ImportProgress({ title, description }: { title: string; description: string }) {
@@ -35,6 +35,7 @@ interface ImportErrorProps {
 export function ImportError({ error, onRetry, onCheckStatus }: ImportErrorProps) {
   const [checking, setChecking] = useState(false);
   const [checkedEmpty, setCheckedEmpty] = useState(false);
+  const bank = useBankConnect();
 
   const timedOut = isApiError(error) && error.kind === 'timeout';
   const message = error instanceof Error ? error.message : 'Something went wrong.';
@@ -81,13 +82,19 @@ export function ImportError({ error, onRetry, onCheckStatus }: ImportErrorProps)
           <Button variant="outline" iconLeft={<RefreshCw size={14} strokeWidth={1.5} aria-hidden="true" />} onClick={onRetry}>
             Try again
           </Button>
-          <Button variant="outline" iconLeft={<Landmark size={14} strokeWidth={1.5} aria-hidden="true" />} onClick={startBankConnect}>
+          <Button
+            variant="outline"
+            loading={bank.connecting}
+            iconLeft={<Landmark size={14} strokeWidth={1.5} aria-hidden="true" />}
+            onClick={bank.connect}
+          >
             Reconnect bank
           </Button>
         </>
       }
     >
       {message} If your bank access has expired, reconnect it to continue.
+      {bank.errorMessage ? ` Couldn’t start the bank connection: ${bank.errorMessage}` : ''}
     </Alert>
   );
 }

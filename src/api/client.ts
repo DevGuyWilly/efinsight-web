@@ -115,8 +115,8 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
     }
 
     if (!res.ok) {
-      // Spring Security answers an unauthenticated request with 403 when no entry point is configured,
-      // so 401 and 403 from a protected endpoint both mean the token is missing or expired.
+      // The API answers a missing or expired token with 401. 403 is treated the same: it's what older
+      // deployments (before the JSON entry point) sent for this, and nothing here is "signed in but forbidden".
       if (auth && (res.status === 401 || res.status === 403)) {
         notifyUnauthorized();
         throw new ApiError('session', res.status, 'Your session has expired. Log in again.');

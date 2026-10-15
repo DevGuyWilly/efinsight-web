@@ -6,6 +6,21 @@ export interface User {
   bankConnected: boolean;
   /** Hides money figures on the dashboard. Persisted server-side, so it follows the user across devices. */
   hideBalances: boolean;
+  /** When the account was created (ISO). Only known once GET /api/me has answered. */
+  createdAt?: string | null;
+}
+
+/** GET /api/me: the user as the server has them now. Same field names as the login response, minus the token. */
+export interface MeResponse {
+  userId: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  bankConnected: boolean;
+  hideBalances: boolean;
+  /** LocalDateTime: no zone. */
+  createdAt?: string | null;
+  lastLoginAt?: string | null;
 }
 
 /**

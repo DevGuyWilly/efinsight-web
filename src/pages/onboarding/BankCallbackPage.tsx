@@ -2,14 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
+import { getCurrentUser } from '@/api/auth';
 import { getTransactionCount } from '@/api/transactions';
 import { Alert } from '@/components/feedback/Alert';
 import { OnboardingPage } from '@/components/layout/OnboardingPage';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { useBankConnect } from '@/hooks/useBankConnect';
 import { countQueryKey } from '@/hooks/useSetupState';
-import { startBankConnect } from '@/lib/bank';
-import { useAuth } from '@/stores/auth';
+import { ME_QUERY_KEY, useAuth } from '@/stores/auth';
 
 type CallbackStatus = 'success' | 'error' | 'unknown';
 
@@ -31,8 +32,9 @@ function errorCopy(code: string | null): string {
  *   /onboarding/callback?status=success|error    (recommended backend redirect)
  *   /auth/success and /auth/error?message=...    (the backend's own redirect targets, when served from this origin)
  *
- * There is no /api/me to re-read `bankConnected`, so on success it calls /api/transactions/count once. A
- * successful call marks the bank connected locally; a positive count also does, whatever the status param says.
+ * Whatever the status param says, it asks the server whether the bank is connected (GET /api/me): the token
+ * exchange sets that flag, so it's the record of whether the connection actually worked. The stored transaction
+ * count then decides where to go next.
  */
 export default function BankCallbackPage() {
   const { pathname } = useLocation();
@@ -40,6 +42,7 @@ export default function BankCallbackPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { setBankConnected, skipSetup } = useAuth();
+  const bank = useBankConnect();
 
   const status: CallbackStatus = pathname.endsWith('/success')
     ? 'success'
@@ -59,17 +62,22 @@ export default function BankCallbackPage() {
     setPhase('verifying');
     setProblem(null);
     try {
-      const { count } = await queryClient.fetchQuery({
-        queryKey: countQueryKey,
-        queryFn: ({ signal }) => getTransactionCount(signal),
+      const me = await queryClient.fetchQuery({
+        queryKey: ME_QUERY_KEY,
+        queryFn: ({ signal }) => getCurrentUser(signal),
         staleTime: 0,
       });
-      if (status === 'unknown' && count <= 0) {
+      if (!me.bankConnected) {
         setProblem('We couldn’t confirm that your bank was connected.');
         setPhase('failed');
         return;
       }
       setBankConnected(true);
+      const { count } = await queryClient.fetchQuery({
+        queryKey: countQueryKey,
+        queryFn: ({ signal }) => getTransactionCount(signal),
+        staleTime: 0,
+      });
       navigate(count > 0 ? '/app/dashboard' : '/onboarding/import', { replace: true });
     } catch (e) {
       // A session error is handled globally (token cleared, redirect to login).
@@ -117,9 +125,18 @@ export default function BankCallbackPage() {
             Check again
           </Button>
         ) : null}
-        <Button size="lg" fullWidth iconLeft={<RefreshCw size={16} strokeWidth={1.5} aria-hidden="true" />} onClick={startBankConnect}>
+        <Button
+          size="lg"
+          fullWidth
+          loading={bank.connecting}
+          iconLeft={<RefreshCw size={16} strokeWidth={1.5} aria-hidden="true" />}
+          onClick={bank.connect}
+        >
           Try again
         </Button>
+        {bank.errorMessage ? (
+          <Alert title="Couldn’t start the bank connection">{bank.errorMessage}</Alert>
+        ) : null}
         <div className="flex justify-center">
           <Button
             variant="ghost"

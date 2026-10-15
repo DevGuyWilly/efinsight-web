@@ -18,11 +18,11 @@ The backend has no CORS config, so the browser only talks to the Vite origin. Vi
 
 ## Bank connection
 
-**Connect bank** navigates the whole page to `/auth/connect-bank?token=<jwt>` (the backend takes the JWT as a query parameter). After the bank, TrueLayer returns to `<app origin>/callback`; the backend handles it and redirects to `/auth/success` or `/auth/error`, which are React routes (`BankCallbackPage`, also reachable as `/onboarding/callback?status=success|error`).
+**Connect bank** first calls `POST /api/bank/connect-url` (with the usual Bearer token) for a 60-second, single-use ticket, then navigates the whole page to the returned `/auth/connect-bank?ticket=…`. The navigation can't carry an `Authorization` header, which is why the login JWT used to be put in this URL; it no longer is. After the bank, TrueLayer returns to `<app origin>/callback`; the backend handles it and redirects to `/auth/success` or `/auth/error`, which are React routes (`BankCallbackPage`, also reachable as `/onboarding/callback?status=success|error`).
 
 So the backend's `TRUELAYER_REDIRECT_URI` must be `<app origin>/callback` (`http://localhost:5173/callback` locally) and registered in the TrueLayer console.
 
-With no `/api/me` endpoint, the callback page calls `/api/transactions/count` once; success marks the bank connected locally. A count above 0 does the same on any page load.
+The callback page asks `GET /api/me` whether the bank is connected (the token exchange sets that flag), then uses the stored transaction count to decide between the import step and the dashboard. The app also refreshes the signed-in user from `/api/me` at sign-in and whenever the tab regains focus, so `bankConnected` and preferences such as hide-balances stay current across devices.
 
 ## Setup flow
 
