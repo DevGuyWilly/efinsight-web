@@ -1,6 +1,6 @@
 # EFinSight web
 
-React frontend for EFinSight: connect a UK bank (TrueLayer), import 90 days of transactions, then ask an AI advisor about spending, budgets and investing. It talks to the Spring Boot API in the `EFinSightAI` repo.
+React frontend for EFinSight: connect a UK bank (TrueLayer), import 90 days of transactions, then ask an AI advisor about spending, budgets and investing. It talks to the Spring Boot API in [EFinSightAI](https://github.com/DevGuyWilly/EFinSightAI).
 
 **Stack:** React 18, TypeScript, Vite, Tailwind CSS 3, React Router 6, TanStack Query 5, react-hook-form + zod, react-markdown (sanitised), Vitest. Design tokens (light and dark) live in `src/styles/tokens.css`; Tailwind colour utilities are generated from that file.
 
@@ -41,10 +41,10 @@ The callback page asks `GET /api/me` whether the bank is connected (the token ex
 | `/` | Landing (sample answer, labelled as sample data) |
 | `/login`, `/signup` | Guests only |
 | `/onboarding/bank`, `/onboarding/import`, `/onboarding/callback` | Setup steps |
-| `/app/dashboard` | KPIs, 13-week spending, top merchants, recent transactions |
+| `/app/dashboard` | KPIs, 13-week spending, top merchants, recent transactions; an eye toggle hides balances |
 | `/app/transactions` | Search, filters, sort, client-side paging (12 per page), detail dialog |
 | `/app/advisor`, `/app/advisor/:conversationId` | Chats with follow-ups: progress, Stop, answers with sections and cited transactions; recent chats, new chat, delete |
-| `/app/settings` | Read-only profile, reconnect bank, import, reprocess, theme, clear advisor chats, sign out |
+| `/app/settings` | Read-only profile and member-since date, change password, reconnect bank, import, reprocess, theme, clear advisor chats, sign out |
 
 ## Backend behaviour the UI accounts for
 
@@ -55,6 +55,7 @@ The callback page asks `GET /api/me` whether the bank is connected (the token ex
 - Chats are stored on the server (`GET/DELETE /api/conversations`, `GET/DELETE /api/conversations/{id}`), so they follow the account across devices. A chat that doesn't exist or belongs to someone else is a 404, shown as "Chat not found". The old localStorage advice history is deleted on first visit to the Advisor.
 - Citations carry the numeric row id and are joined to the loaded transactions on `id`.
 - Ingest and reprocess are long POSTs: indeterminate progress, and on a timeout "Check status" re-reads the count before retrying. A failed import offers "Reconnect bank". The backend skips transactions it already has.
+- Hide balances (`POST /api/users/preferences`) is saved on the account and applied optimistically, so it follows the user across devices; it's re-read from `/api/me` when the tab regains focus. Change password is `POST /api/users/change-password`.
 - Not available on the backend: disconnect bank (shown disabled), profile edit (read-only). "Last import" is recorded locally.
 
 ## Deploy (Render)
@@ -71,10 +72,10 @@ Render's docs don't say whether rewrites keep query strings or how rules are ord
 ## Layout
 
 ```
-src/api/         fetch client (auth header, timeout, 401), endpoints, types
+src/api/         fetch client (auth header, timeout, 401), endpoints (auth, bank, preferences, transactions, plan, conversations), types
 src/app/         routes, guards (RequireAuth, PublicOnly, RequireSetup)
-src/components/  ui, layout, feedback, bank, dashboard, transactions, advisor
-src/hooks/       useSetupState, useTransactions, useIngest, usePlan, useConversations
+src/components/  ui, layout, feedback, bank, dashboard, transactions, advisor, settings
+src/hooks/       useSetupState, useTransactions, useIngest, usePlan, useConversations, useBankConnect, usePreferences, useChangePassword
 src/lib/         money, dates, transaction logic, session, storage, config
 src/pages/       one folder per screen
 src/stores/      auth, theme
